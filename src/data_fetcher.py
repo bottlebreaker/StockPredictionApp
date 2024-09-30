@@ -175,35 +175,54 @@ def get_date_range():
 ## Modified store_stock_data function to create dynamic table names
 def store_stock_data(stock_symbol, stock_data):
     # Sanitize the stock symbol to ensure it is a valid SQL table name
-    print("entering function store stock data")
+    print("Entering function store_stock_data")
     table_name = sanitize_symbol(stock_symbol)
+    print(f"Sanitized table name for {stock_symbol}: {table_name}")
 
-    # Connect to the SQLite database
-    conn = sqlite3.connect('stocks.db')
-    cursor = conn.cursor()
+    # Check if any data exists
+    if not stock_data:
+        print(f"No data to store for {stock_symbol}")
+        return
 
-    # Dynamically create a table based on the stock symbol (if it doesn't already exist)
-    cursor.execute(f'''
-        CREATE TABLE IF NOT EXISTS {table_name} (
-            timestamp TEXT PRIMARY KEY,
-            open REAL,
-            high REAL,
-            low REAL,
-            close REAL,
-            volume REAL
-        )
-    ''')
+    try:
+        # Connect to the SQLite database
+        conn = sqlite3.connect('stocks.db')
+        cursor = conn.cursor()
+        print("Connected to the database.")
 
-    # Insert stock data into the dynamically named table
-    for entry in stock_data:
-        cursor.execute(f'''
-            INSERT OR IGNORE INTO {table_name} (timestamp, open, high, low, close, volume)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (entry[0], entry[1], entry[2], entry[3], entry[4], entry[5]))
+        # Dynamically create a table based on the stock symbol (if it doesn't already exist)
+        create_table_query = f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                timestamp TEXT PRIMARY KEY,
+                open REAL,
+                high REAL,
+                low REAL,
+                close REAL,
+                volume REAL
+            )
+        '''
+        #print(f"Creating table {table_name} with query: {create_table_query}")
+        cursor.execute(create_table_query)
+        print(f"Table {table_name} created (or already exists).")
 
-    conn.commit()
-    conn.close()
-    print(f"Historical data for {stock_symbol} has been saved in table {table_name}.")
+        # Insert stock data into the dynamically named table
+        for entry in stock_data:
+            #print(f"Inserting data: {entry}")
+            insert_query = f'''
+                INSERT OR IGNORE INTO {table_name} (timestamp, open, high, low, close, volume)
+                VALUES (?, ?, ?, ?, ?, ?)
+            '''
+            cursor.execute(insert_query, (entry[0], entry[1], entry[2], entry[3], entry[4], entry[5]))
+
+        # Commit the transaction
+        conn.commit()
+        print(f"Data for {stock_symbol} committed successfully.")
+
+    except sqlite3.Error as e:
+        print(f"Error while working with SQLite: {e}")
+    finally:
+        conn.close()
+        print("Database connection closed.")
 
 # Fetch historical stock data from Zerodha
 def fetch_historical_data(stock_symbol, stock_token, from_date, to_date, interval='day'):

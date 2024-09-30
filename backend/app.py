@@ -1,5 +1,6 @@
 import sys
 import os
+from StockPredictionApp.backend import preprocess
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
@@ -8,7 +9,7 @@ import sqlite3
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import functions from the respective modules
-from . import data_fetcher, preprocess
+from StockPredictionApp.src.data_fetcher import fetch_historical_data
 from StockPredictionApp.src.data_fetcher import fetch_and_store_instruments, search_stock_in_db, get_date_range
 
 app = Flask(__name__)
@@ -32,7 +33,7 @@ def get_stock_data():
 
         if stock_token:
             from_date, to_date = get_date_range()  # Get the date range for fetching historical data
-            historical_data = data_fetcher.fetch_historical_data(stock_token, from_date, to_date)  # Fetch historical stock data
+            historical_data = fetch_historical_data(symbol, stock_token, from_date, to_date)  # Fetch historical stock data
 
             if historical_data:
                 processed_data = process_and_return_stock_data(historical_data)  # Process the fetched data

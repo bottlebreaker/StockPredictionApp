@@ -2,6 +2,28 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import talib
 
+def process_and_return_stock_data(historical_data):
+   
+    # Convert raw historical stock data to DataFrame
+    df = pd.DataFrame(historical_data)
+    if list(df.columns) == [0, 1, 2, 3, 4, 5]:
+        df.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+
+    # Convert column names to lowercase and remove spaces
+    df.columns = df.columns.map(str).str.lower().str.strip()
+
+    # Continue as before
+    required_columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+
+    if all(col in df.columns for col in required_columns):
+        df = df[required_columns]
+    else:
+        raise KeyError(f"Some required columns are missing. Available columns: {df.columns}")
+
+    # Proceed with data normalization and adding technical indicators
+    df = add_technical_indicators(df)
+    return df.to_dict(orient='records')
+
 # Convert historical data into a pandas DataFrame
 def convert_to_dataframe(historical_data):
     df = pd.DataFrame(historical_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
